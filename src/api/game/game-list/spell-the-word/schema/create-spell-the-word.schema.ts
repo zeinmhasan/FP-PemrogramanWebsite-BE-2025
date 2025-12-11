@@ -33,6 +33,16 @@ export const CreateSpellTheWordSchema = z.object({
     max_size: 5 * 1024 * 1024,
     min_amount: 0,
     max_amount: 50,
+    file_types: [
+      'audio/mpeg',
+      'audio/mp3',
+      'audio/mp4',
+      'audio/m4a',
+      'audio/x-m4a',
+      'audio/wav',
+      'audio/ogg',
+      'audio/webm',
+    ],
   }).optional(),
   words: StringToObjectSchema(z.array(SpellWordItemSchema).min(1).max(50)),
 });
