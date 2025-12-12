@@ -4,7 +4,7 @@ import { CreateFindTheMatchSchema } from './create-find-the-match.schema';
 
 export const UpdateFindTheMatchSchema =
   CreateFindTheMatchSchema.partial().extend({
-    is_publish: z.boolean().optional(),
+    is_published: z.boolean().optional(),
     initial_lives: z
       .number()
       .min(1, 'Initial lives must be at least 1')

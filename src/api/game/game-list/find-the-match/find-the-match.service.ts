@@ -25,6 +25,7 @@ export abstract class FindTheMatchService {
     const newFindTheMatchId = v4();
     const gameTemplateId = await this.getGameTemplateId();
 
+    // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access
     if (data.items.length === 0) {
       throw new ErrorResponse(
         StatusCodes.BAD_REQUEST,
@@ -48,10 +49,13 @@ export abstract class FindTheMatchService {
 
     const findTheMatchJson: IFindTheMatchJson = {
       initial_lives: data.initial_lives,
-      items: data.items.map(item => ({
-        question: item.question,
-        answer: item.answer,
-      })),
+      // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access
+      items: (data.items as Array<{ question: string; answer: string }>).map(
+        item => ({
+          question: item.question,
+          answer: item.answer,
+        }),
+      ),
     };
 
     const newGame = await prisma.games.create({
@@ -120,7 +124,7 @@ export abstract class FindTheMatchService {
   }
 
   static async updateFindTheMatch(
-    data: IUpdateFindTheMatch & { thumbnail_image?: File | null },
+    data: IUpdateFindTheMatch & { thumbnail_image?: File },
     game_id: string,
     user_id: string,
     user_role: ROLE,
@@ -176,10 +180,6 @@ export abstract class FindTheMatchService {
         `game/find-the-match/${game_id}`,
         data.thumbnail_image,
       );
-    } else if (data.thumbnail_image === null && game.thumbnail_image) {
-      // If thumbnail_image is explicitly set to null, delete the old one
-      oldImagePathsToDelete.push(game.thumbnail_image);
-      thumbnailImagePath = null;
     }
 
     const oldFindTheMatchJson = game.game_json as IFindTheMatchJson | null;
@@ -188,10 +188,13 @@ export abstract class FindTheMatchService {
       initial_lives:
         data.initial_lives ?? oldFindTheMatchJson?.initial_lives ?? 3,
       items: data.items
-        ? data.items.map(item => ({
-            question: item.question,
-            answer: item.answer,
-          }))
+        ? // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access
+          (data.items as Array<{ question: string; answer: string }>).map(
+            item => ({
+              question: item.question,
+              answer: item.answer,
+            }),
+          )
         : oldFindTheMatchJson?.items || [],
     };
 
@@ -201,7 +204,7 @@ export abstract class FindTheMatchService {
         name: data.name,
         description: data.description,
         thumbnail_image: thumbnailImagePath,
-        is_published: data.is_publish,
+        is_published: data.is_published,
         game_json: findTheMatchJson as unknown as Prisma.InputJsonValue,
       },
       select: {
@@ -317,11 +320,11 @@ export abstract class FindTheMatchService {
       item => item.question === question && item.answer === answer,
     );
 
-    let newRemainingAnswers = remainingAnswers;
+    let newRemainingAnswers = remainingAnswers ?? [];
 
     if (matchedItem) {
       isCorrect = true;
-      newRemainingAnswers = remainingAnswers.filter(ans => ans !== answer);
+      newRemainingAnswers = newRemainingAnswers.filter(ans => ans !== answer);
     } else {
       isCorrect = false;
 

@@ -38,7 +38,7 @@ export const FindTheMatchController = Router()
     ) => {
       try {
         const newGame = await FindTheMatchService.createFindTheMatch(
-          request.body,
+          request.body, // The validated and merged body is here
           request.user!.user_id,
         );
         const result = new SuccessResponse(
@@ -144,7 +144,7 @@ export const FindTheMatchController = Router()
     ) => {
       try {
         const updatedGame = await FindTheMatchService.updateFindTheMatch(
-          request.body,
+          request.body, // The validated and merged body is here
           request.params.game_id,
           request.user!.user_id,
           request.user!.role,
