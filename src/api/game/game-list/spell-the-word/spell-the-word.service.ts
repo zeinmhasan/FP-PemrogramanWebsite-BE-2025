@@ -39,6 +39,32 @@ const shuffleArray = <T>(array: T[]): T[] => {
   return newArray;
 };
 
+// Generate random distractor letters (letters not in the word)
+const generateDistractorLetters = (word: string, count: number): string[] => {
+  const alphabet = 'abcdefghijklmnopqrstuvwxyz';
+  const wordLetters = new Set(word.toLowerCase());
+  const availableLetters = [...alphabet].filter(l => !wordLetters.has(l));
+
+  const distractors: string[] = [];
+
+  for (let index = 0; index < count && availableLetters.length > 0; index++) {
+    const randomIndex = Math.floor(Math.random() * availableLetters.length);
+    distractors.push(availableLetters[randomIndex]);
+    availableLetters.splice(randomIndex, 1); // Remove to avoid duplicates
+  }
+
+  return distractors;
+};
+
+// Calculate number of distractor letters based on word length
+const getDistractorCount = (wordLength: number): number => {
+  if (wordLength <= 3) return 2; // Short words: 2 distractors
+  if (wordLength <= 5) return 3; // Medium words: 3 distractors
+  if (wordLength <= 7) return 4; // Longer words: 4 distractors
+
+  return Math.min(5, Math.floor(wordLength * 0.5)); // Very long words: up to 5 distractors
+};
+
 export abstract class SpellTheWordService {
   // eslint-disable-next-line @typescript-eslint/naming-convention
   private static SPELL_THE_WORD_SLUG = 'spell-the-word';
@@ -495,14 +521,24 @@ export abstract class SpellTheWordService {
     if (!gameJson)
       throw new ErrorResponse(StatusCodes.NOT_FOUND, 'Game data not found');
 
-    const wordsWithIndex = (gameJson.words ?? []).map((w, word_index) => ({
-      word_index,
-      word_image: w.word_image ?? null,
-      word_audio: w.word_audio ?? null,
-      hint: w.hint ?? null,
-      letter_count: w.word_text.length,
-      shuffled_letters: shuffleArray([...w.word_text]),
-    }));
+    const wordsWithIndex = (gameJson.words ?? []).map((w, word_index) => {
+      const wordLetters = [...w.word_text];
+      const distractorCount = getDistractorCount(w.word_text.length);
+      const distractors = generateDistractorLetters(
+        w.word_text,
+        distractorCount,
+      );
+      const allLetters = [...wordLetters, ...distractors];
+
+      return {
+        word_index,
+        word_image: w.word_image ?? null,
+        word_audio: w.word_audio ?? null,
+        hint: w.hint ?? null,
+        letter_count: w.word_text.length,
+        shuffled_letters: shuffleArray(allLetters),
+      };
+    });
 
     return {
       id: game.id,
@@ -665,7 +701,7 @@ export abstract class SpellTheWordService {
     };
   }
 
-  static async getLeaderboard(game_id: string, limit = 10) {
+  static async getLeaderboard(game_id: string, limit = 5) {
     // Verify game exists
     const game = await prisma.games.findUnique({
       where: { id: game_id },
