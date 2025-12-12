@@ -8,6 +8,7 @@ import { FileManager } from '@/utils';
 import {
   type ICheckSpellingAnswer,
   type ICreateSpellTheWord,
+  type ISubmitScore,
   type IUpdateSpellTheWord,
 } from './schema';
 
@@ -590,5 +591,115 @@ export abstract class SpellTheWordService {
       throw new ErrorResponse(StatusCodes.NOT_FOUND, 'Game template not found');
 
     return result.id;
+  }
+
+  static async submitScore(
+    data: ISubmitScore,
+    game_id: string,
+    user_id?: string,
+  ) {
+    // Verify game exists
+    const game = await prisma.games.findUnique({
+      where: { id: game_id },
+      select: {
+        id: true,
+        game_template: { select: { slug: true } },
+      },
+    });
+
+    if (!game || game.game_template.slug !== this.SPELL_THE_WORD_SLUG)
+      throw new ErrorResponse(StatusCodes.NOT_FOUND, 'Game not found');
+
+    // Check if user already has a score for this game
+    const existingScore = await prisma.leaderboards.findUnique({
+      where: {
+        game_id_user_id: {
+          game_id,
+          user_id: (user_id || null) as string,
+        },
+      },
+    });
+
+    // If existing score is better or equal, don't update
+    if (existingScore && existingScore.score >= data.score) {
+      return {
+        id: existingScore.id,
+        updated: false,
+        message: 'Existing score is better',
+      };
+    }
+
+    // Upsert the score (create or update)
+    const leaderboardEntry = await prisma.leaderboards.upsert({
+      where: {
+        game_id_user_id: {
+          game_id,
+          user_id: (user_id || null) as string,
+        },
+      },
+      create: {
+        game_id,
+        user_id: user_id || null,
+        player_name: data.player_name,
+        score: data.score,
+        max_score: data.max_score,
+        time_taken: data.time_taken,
+        accuracy: data.accuracy,
+      },
+      update: {
+        player_name: data.player_name,
+        score: data.score,
+        max_score: data.max_score,
+        time_taken: data.time_taken,
+        accuracy: data.accuracy,
+      },
+      select: {
+        id: true,
+      },
+    });
+
+    return {
+      id: leaderboardEntry.id,
+      updated: true,
+      message: 'Score submitted successfully',
+    };
+  }
+
+  static async getLeaderboard(game_id: string, limit = 10) {
+    // Verify game exists
+    const game = await prisma.games.findUnique({
+      where: { id: game_id },
+      select: {
+        id: true,
+        game_template: { select: { slug: true } },
+      },
+    });
+
+    if (!game || game.game_template.slug !== this.SPELL_THE_WORD_SLUG)
+      throw new ErrorResponse(StatusCodes.NOT_FOUND, 'Game not found');
+
+    const leaderboard = await prisma.leaderboards.findMany({
+      where: { game_id },
+      orderBy: [{ score: 'desc' }, { time_taken: 'asc' }],
+      take: limit,
+      select: {
+        id: true,
+        player_name: true,
+        score: true,
+        max_score: true,
+        time_taken: true,
+        accuracy: true,
+        created_at: true,
+        user: {
+          select: {
+            id: true,
+            username: true,
+            profile_picture: true,
+          },
+        },
+      },
+    });
+
+    return leaderboard;
   }
 }

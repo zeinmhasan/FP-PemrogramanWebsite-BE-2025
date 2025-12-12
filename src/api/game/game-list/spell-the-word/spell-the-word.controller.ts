@@ -18,7 +18,9 @@ import {
   CreateSpellTheWordSchema,
   type ICheckSpellingAnswer,
   type ICreateSpellTheWord,
+  type ISubmitScore,
   type IUpdateSpellTheWord,
+  SubmitScoreSchema,
   UpdateSpellTheWordSchema,
 } from './schema';
 import { SpellTheWordService } from './spell-the-word.service';
@@ -220,6 +222,64 @@ export const SpellTheWordController = Router()
         return response
           .status(successResponse.statusCode)
           .json(successResponse.json());
+      } catch (error) {
+        return next(error);
+      }
+    },
+  )
+  .post(
+    '/:game_id/submit-score',
+    validateAuth({ optional: true }),
+    validateBody({ schema: SubmitScoreSchema }),
+    async (
+      request: AuthedRequest<{ game_id: string }, {}, ISubmitScore>,
+      response: Response,
+      next: NextFunction,
+    ) => {
+      try {
+        const result = await SpellTheWordService.submitScore(
+          request.body,
+          request.params.game_id,
+          request.user?.user_id,
+        );
+
+        const successResponse = new SuccessResponse(
+          StatusCodes.OK,
+          result.message,
+          result,
+        );
+
+        return response
+          .status(successResponse.statusCode)
+          .json(successResponse.json());
+      } catch (error) {
+        return next(error);
+      }
+    },
+  )
+  .get(
+    '/:game_id/leaderboard',
+    async (
+      request: Request<{ game_id: string }, {}, {}, { limit?: string }>,
+      response: Response,
+      next: NextFunction,
+    ) => {
+      try {
+        const limit = request.query.limit
+          ? Number.parseInt(request.query.limit)
+          : 10;
+        const leaderboard = await SpellTheWordService.getLeaderboard(
+          request.params.game_id,
+          limit,
+        );
+
+        const result = new SuccessResponse(
+          StatusCodes.OK,
+          'Get leaderboard successfully',
+          leaderboard,
+        );
+
+        return response.status(result.statusCode).json(result.json());
       } catch (error) {
         return next(error);
       }
