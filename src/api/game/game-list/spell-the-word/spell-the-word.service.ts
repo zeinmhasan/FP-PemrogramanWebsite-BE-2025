@@ -647,7 +647,6 @@ export abstract class SpellTheWordService {
       throw new ErrorResponse(StatusCodes.NOT_FOUND, 'Game not found');
 
     // Check if user already has a score for this game
-    // eslint-disable-next-line @typescript-eslint/no-unsafe-call, @typescript-eslint/no-unsafe-member-access, @typescript-eslint/no-unsafe-assignment
     const existingScore = (await prisma.leaderboards.findUnique({
       where: {
         game_id_user_id: {
@@ -671,7 +670,6 @@ export abstract class SpellTheWordService {
     }
 
     // Upsert the score (create or update)
-    // eslint-disable-next-line @typescript-eslint/no-unsafe-call, @typescript-eslint/no-unsafe-member-access, @typescript-eslint/no-unsafe-assignment
     const leaderboardEntry = (await prisma.leaderboards.upsert({
       where: {
         game_id_user_id: {
@@ -738,7 +736,6 @@ export abstract class SpellTheWordService {
     if (!game || game.game_template.slug !== this.SPELL_THE_WORD_SLUG)
       throw new ErrorResponse(StatusCodes.NOT_FOUND, 'Game not found');
 
-    // eslint-disable-next-line @typescript-eslint/no-unsafe-call, @typescript-eslint/no-unsafe-member-access, @typescript-eslint/no-unsafe-assignment
     const leaderboard = (await prisma.leaderboards.findMany({
       where: { game_id },
       orderBy: [{ score: 'desc' }, { time_taken: 'asc' }],
