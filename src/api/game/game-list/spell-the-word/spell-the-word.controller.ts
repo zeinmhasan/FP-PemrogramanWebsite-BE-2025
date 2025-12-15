@@ -268,7 +268,9 @@ export const SpellTheWordController = Router()
         const limit = request.query.limit
           ? Number.parseInt(request.query.limit)
           : 10;
-        const leaderboard = await SpellTheWordService.getLeaderboard(
+        const leaderboard: Awaited<
+          ReturnType<typeof SpellTheWordService.getLeaderboard>
+        > = await SpellTheWordService.getLeaderboard(
           request.params.game_id,
           limit,
         );
