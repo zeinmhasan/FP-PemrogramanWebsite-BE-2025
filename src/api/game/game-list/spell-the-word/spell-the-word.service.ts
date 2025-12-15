@@ -647,13 +647,7 @@ export abstract class SpellTheWordService {
       throw new ErrorResponse(StatusCodes.NOT_FOUND, 'Game not found');
 
     // Check if user already has a score for this game
-    const existingScore: Awaited<
-      ReturnType<
-        typeof prisma.leaderboards.findUnique<{
-          select: { id: true; score: true };
-        }>
-      >
-    > = await prisma.leaderboards.findUnique({
+    const existingScore = await prisma.leaderboards.findUnique({
       where: {
         game_id_user_id: {
           game_id,
@@ -676,9 +670,7 @@ export abstract class SpellTheWordService {
     }
 
     // Upsert the score (create or update)
-    const leaderboardEntry: Awaited<
-      ReturnType<typeof prisma.leaderboards.upsert<{ select: { id: true } }>>
-    > = await prisma.leaderboards.upsert({
+    const leaderboardEntry = await prisma.leaderboards.upsert({
       where: {
         game_id_user_id: {
           game_id,
@@ -744,9 +736,7 @@ export abstract class SpellTheWordService {
     if (!game || game.game_template.slug !== this.SPELL_THE_WORD_SLUG)
       throw new ErrorResponse(StatusCodes.NOT_FOUND, 'Game not found');
 
-    const leaderboard: Awaited<
-      ReturnType<typeof prisma.leaderboards.findMany>
-    > = await prisma.leaderboards.findMany({
+    const leaderboard = await prisma.leaderboards.findMany({
       where: { game_id },
       orderBy: [{ score: 'desc' }, { time_taken: 'asc' }],
       take: limit,
@@ -768,6 +758,19 @@ export abstract class SpellTheWordService {
       },
     });
 
-    return leaderboard;
+    return leaderboard as Array<{
+      id: string;
+      player_name: string | null;
+      score: number;
+      max_score: number;
+      time_taken: number | null;
+      accuracy: number | null;
+      created_at: Date;
+      user: {
+        id: string;
+        username: string;
+        profile_picture: string | null;
+      } | null;
+    }>;
   }
 }
