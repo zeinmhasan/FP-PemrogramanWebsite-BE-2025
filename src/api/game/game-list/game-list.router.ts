@@ -1,5 +1,4 @@
 /* eslint-disable @typescript-eslint/naming-convention */
-/* eslint-disable import/no-default-export */
 import { Router } from 'express';
 
 import { PairOrNoPairController } from './pair-or-no-pair/pair-or-no-pair.controller';
@@ -12,4 +11,4 @@ gameListRouter.use('/quiz', QuizController);
 gameListRouter.use('/pair-or-no-pair', PairOrNoPairController);
 gameListRouter.use('/spell-the-word', SpellTheWordController);
 
-export default gameListRouter;
+export { gameListRouter };
