@@ -647,19 +647,18 @@ export abstract class SpellTheWordService {
       throw new ErrorResponse(StatusCodes.NOT_FOUND, 'Game not found');
 
     // Check if user already has a score for this game
-    const existingScore: { id: string; score: number } | null =
-      await prisma.leaderboards.findUnique({
-        where: {
-          game_id_user_id: {
-            game_id,
-            user_id: (user_id || null) as string,
-          },
+    const existingScore = await prisma.leaderboards.findUnique({
+      where: {
+        game_id_user_id: {
+          game_id,
+          user_id: (user_id || null) as string,
         },
-        select: {
-          id: true,
-          score: true,
-        },
-      });
+      },
+      select: {
+        id: true,
+        score: true,
+      },
+    });
 
     // If existing score is better or equal, don't update
     if (existingScore && existingScore.score >= data.score) {
@@ -671,7 +670,7 @@ export abstract class SpellTheWordService {
     }
 
     // Upsert the score (create or update)
-    const leaderboardEntry: { id: string } = await prisma.leaderboards.upsert({
+    const leaderboardEntry = await prisma.leaderboards.upsert({
       where: {
         game_id_user_id: {
           game_id,
@@ -759,6 +758,19 @@ export abstract class SpellTheWordService {
       },
     });
 
-    return leaderboard;
+    return leaderboard as Array<{
+      id: string;
+      player_name: string | null;
+      score: number;
+      max_score: number;
+      time_taken: number | null;
+      accuracy: number | null;
+      created_at: Date;
+      user: {
+        id: string;
+        username: string;
+        profile_picture: string | null;
+      } | null;
+    }>;
   }
 }

@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/naming-convention */
 import { Router } from 'express';
 
 import airplaneRouter from './airplane/airplane.router';
@@ -7,9 +8,9 @@ import { FindTheMatchController } from './find-the-match/find-the-match.controll
 import { MazeChaseController } from './maze-chase/maze-chase.controller';
 import { PairOrNoPairController } from './pair-or-no-pair/pair-or-no-pair.controller';
 import { QuizController } from './quiz/quiz.controller';
-import { SpellTheWordController } from './spell-the-word/spell-the-word.controller';
 import { SlidingPuzzleController } from './sliding-puzzle/sliding-puzzle.controller';
 import { SpeedSortingController } from './speed-sorting/speed-sorting.controller';
+import { SpellTheWordController } from './spell-the-word/spell-the-word.controller';
 import { SpinTheWheelController } from './spin-the-wheel/spin-the-wheel.controller';
 import { TrueOrFalseController } from './true-or-false/true-or-false.controller';
 import { TypeSpeedController } from './type-speed/type-speed.controller';
@@ -19,8 +20,6 @@ const gameListRouter = Router();
 
 gameListRouter.use('/quiz', QuizController);
 gameListRouter.use('/spell-the-word', SpellTheWordController);
-
-export default gameListRouter;
 gameListRouter.use('/maze-chase', MazeChaseController);
 gameListRouter.use('/sliding-puzzle', SlidingPuzzleController);
 gameListRouter.use('/speed-sorting', SpeedSortingController);
