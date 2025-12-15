@@ -28,7 +28,7 @@ model Users {
 
   games             Games[]
   liked_games       LikedGames[]
-  leaderboards      Leaderboards[]
+  leaderboard       Leaderboard[]
 }
 
 model GameTemplates {
@@ -66,7 +66,7 @@ model Games {
   updated_at        DateTime      @default(now()) @updatedAt
 
   liked             LikedGames[]
-  leaderboards      Leaderboards[]
+  leaderboard       Leaderboard[]
 
   @@index([name])
 }
@@ -87,22 +87,19 @@ model LikedGames {
   @@unique([user_id, game_id])
 }
 
-model Leaderboards {
-  id                String        @id @default(uuid())
-  game_id           String
-  user_id           String?
-  player_name       String
-  score             Int
-  max_score         Int
-  time_taken        Int
-  accuracy          Float
+model Leaderboard {
+  id           String   @id @default(uuid())
+  user_id      String?
+  game_id      String
+  score        Int
+  difficulty   String?  // Optional: "easy" | "normal" | "hard"
+  time_taken   Int?     // Time in seconds
 
-  game              Games         @relation(fields: [game_id], references: [id], onDelete: Cascade, onUpdate: Cascade)
-  user              Users?        @relation(fields: [user_id], references: [id], onDelete: SetNull, onUpdate: Cascade)
+  user         Users?   @relation(fields: [user_id], references: [id], onDelete: SetNull, onUpdate: Cascade)
+  game         Games    @relation(fields: [game_id], references: [id], onDelete: Cascade, onUpdate: Cascade)
 
-  created_at        DateTime      @default(now())
-  updated_at        DateTime      @default(now()) @updatedAt
-
-  @@unique([game_id, user_id])
+  created_at   DateTime @default(now())
+  
   @@index([game_id, score])
+  @@index([user_id])
 }

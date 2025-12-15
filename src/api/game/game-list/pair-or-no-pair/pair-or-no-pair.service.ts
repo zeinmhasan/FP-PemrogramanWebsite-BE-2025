@@ -6,7 +6,11 @@ import { ErrorResponse, prisma } from '@/common';
 import { type IPairOrNoPairGameData } from '@/common/interface/games';
 import { FileManager } from '@/utils';
 
-import { type ICreatePairOrNoPair, type IUpdatePairOrNoPair } from './schema';
+import {
+  type ICreatePairOrNoPair,
+  type IEvaluate,
+  type IUpdatePairOrNoPair,
+} from './schema';
 
 export abstract class PairOrNoPairService {
   // eslint-disable-next-line @typescript-eslint/naming-convention
@@ -287,5 +291,98 @@ export abstract class PairOrNoPairService {
       throw new ErrorResponse(StatusCodes.NOT_FOUND, 'Game template not found');
 
     return result.id;
+  }
+
+  static async evaluateGame(
+    data: IEvaluate,
+    game_id: string,
+    user_id?: string,
+  ) {
+    // Verify game exists and is a pair-or-no-pair game
+    const game = await prisma.games.findUnique({
+      where: { id: game_id },
+      select: {
+        id: true,
+        game_template: {
+          select: { slug: true },
+        },
+      },
+    });
+
+    if (!game || game.game_template.slug !== this.GAME_SLUG)
+      throw new ErrorResponse(StatusCodes.NOT_FOUND, 'Game not found');
+
+    // Create leaderboard entry
+    const leaderboardEntry = await prisma.leaderboard.create({
+      data: {
+        game_id,
+        user_id: user_id || null,
+        score: data.score,
+        difficulty: data.difficulty,
+        time_taken: data.time_taken,
+      },
+      select: {
+        id: true,
+        score: true,
+        difficulty: true,
+        created_at: true,
+      },
+    });
+
+    // Get user's rank for this game and difficulty
+    const rank = await prisma.leaderboard.count({
+      where: {
+        game_id,
+        difficulty: data.difficulty,
+        score: {
+          gt: data.score,
+        },
+      },
+    });
+
+    return {
+      ...leaderboardEntry,
+      rank: rank + 1,
+    };
+  }
+
+  static async getLeaderboard(game_id: string, difficulty?: string) {
+    // Verify game exists
+    const game = await prisma.games.findUnique({
+      where: { id: game_id },
+      select: { id: true },
+    });
+
+    if (!game) throw new ErrorResponse(StatusCodes.NOT_FOUND, 'Game not found');
+
+    // Build where clause
+    const where: { game_id: string; difficulty?: string } = { game_id };
+    if (difficulty) where.difficulty = difficulty;
+
+    // Get top 10 scores
+    const leaderboard = await prisma.leaderboard.findMany({
+      where,
+      orderBy: { score: 'desc' },
+      take: 10,
+      select: {
+        id: true,
+        score: true,
+        difficulty: true,
+        created_at: true,
+        user: {
+          select: {
+            username: true,
+          },
+        },
+      },
+    });
+
+    return leaderboard.map((entry, index) => ({
+      rank: index + 1,
+      username: entry.user?.username || 'Anonymous',
+      score: entry.score,
+      difficulty: entry.difficulty,
+      created_at: entry.created_at,
+    }));
   }
 }
